@@ -21,7 +21,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   
-  // 新增：用來記錄被勾選的禮券 ID 清單
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -53,14 +52,13 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success) {
         setVouchers(data.vouchers);
-        setSelectedIds([]); // 重新載入時清空勾選
+        setSelectedIds([]);
       }
     } catch (err) {
       console.error('載入失敗');
     }
   };
 
-  // 處理 CSV 檔案上傳匯入
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -106,7 +104,6 @@ export default function AdminPage() {
     reader.readAsText(file);
   };
 
-  // 匯出 CSV
   const handleExportCSV = () => {
     if (vouchers.length === 0) {
       alert('目前沒有資料可以匯出');
@@ -134,7 +131,6 @@ export default function AdminPage() {
     document.body.removeChild(link);
   };
 
-  // ================= 新增：處理單選與全選勾選 =================
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(vouchers.map((v) => v.id));
@@ -151,7 +147,6 @@ export default function AdminPage() {
     }
   };
 
-  // ================= 新增：刪除選取的項目 API 呼叫 =================
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) {
       alert('請先勾選要刪除的項目');
@@ -172,7 +167,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success) {
         alert(data.message);
-        fetchVouchers(); // 重新整理清單
+        fetchVouchers();
       } else {
         alert(data.message || '刪除失敗');
       }
@@ -181,7 +176,6 @@ export default function AdminPage() {
     }
   };
 
-  // ================= 未登入畫面 =================
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
@@ -232,7 +226,6 @@ export default function AdminPage() {
     );
   }
 
-  // ================= 已登入後台介面 =================
   return (
     <main className="min-h-screen bg-gray-100 py-10 px-6">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -255,7 +248,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* CSV 批次上傳區塊 */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
           <h2 className="text-lg font-bold text-gray-700 mb-2">📁 批次匯入禮券 (CSV 格式)</h2>
           <p className="text-sm text-gray-500 mb-4">
@@ -275,13 +267,11 @@ export default function AdminPage() {
           {importMessage && <p className="text-green-700 bg-green-50 p-3 rounded-lg text-sm mt-3 font-bold border border-green-200">{importMessage}</p>}
         </div>
 
-        {/* 兌換明細列表區塊 */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
           <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-lg font-bold text-gray-700">📊 所有禮券兌換清單 (共 {vouchers.length} 筆)</h2>
             
             <div className="flex flex-wrap items-center gap-3">
-              {/* 刪除按鈕 */}
               {selectedIds.length > 0 && (
                 <button 
                   onClick={handleDeleteSelected}
@@ -291,7 +281,6 @@ export default function AdminPage() {
                 </button>
               )}
 
-              {/* 匯出 CSV 按鈕 */}
               <button 
                 onClick={handleExportCSV}
                 className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-1 shadow-sm"
@@ -329,7 +318,7 @@ export default function AdminPage() {
                     <td colSpan={7} className="p-6 text-center text-gray-400">目前沒有任何禮券資料，請透過上方 CSV 上傳匯入。</td>
                   </tr>
                 ) : (
-                  vouchers.vouchers?.length ? null : vouchers.map((v) => (
+                  vouchers.map((v) => (
                     <tr key={v.id} className={`hover:bg-gray-50/50 ${selectedIds.includes(v.id) ? 'bg-blue-50/40' : ''}`}>
                       <td className="p-4 text-center">
                         <input 
