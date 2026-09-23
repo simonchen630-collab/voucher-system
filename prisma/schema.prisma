@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 禮券與運費券資料表
+model Voucher {
+  id            Int       @id @default(autoincrement())
+  giftCode      String    @unique @map("gift_code") // 禮券序號 (設為唯一值防重複)
+  shippingCode  String    @map("shipping_code")     // 運費券序號
+  amount        Int                                 // 禮券金額
+  isExchanged   Boolean   @default(false) @map("is_exchanged") // 是否兌換
+  memberPhone   String?   @map("member_phone")      // 會員電話 (兌換後寫入)
+  exchangedAt   DateTime? @map("exchanged_at")      // 兌換時間
+  createdAt     DateTime  @default(now()) @map("created_at") // 匯入時間
+}
+
+// 系統動態設定表 (用於前台注意事項)
+model SiteSetting {
+  key       String   @id                        // 設定鍵名 (例如: frontend_notice)
+  value     String                              // 設定內容
+  updatedAt DateTime @updatedAt @map("updated_at") // 最後更新時間
+}
