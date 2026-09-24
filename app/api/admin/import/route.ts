@@ -17,20 +17,31 @@ export async function POST(request: Request) {
     for (const row of csvData) {
       if (!row.giftCode) continue;
 
-      // 使用 upsert：若禮券序號已存在則更新，不存在則直接新增
-      await prisma.voucher.upsert({
+      // 檢查該禮券序號是否已存在
+      const existing = await prisma.voucher.findFirst({
         where: { giftCode: row.giftCode },
-        update: {
-          shippingCode: row.shippingCode,
-          amount: row.amount,
-        },
-        create: {
-          giftCode: row.giftCode,
-          shippingCode: row.shippingCode,
-          amount: row.amount,
-          isExchanged: false,
-        },
       });
+
+      if (existing) {
+        // 若存在則更新對應的運費券與金額
+        await prisma.voucher.update({
+          where: { id: existing.id },
+          data: {
+            shippingCode: row.shippingCode,
+            amount: row.amount,
+          },
+        });
+      } else {
+        // 若不存在則直接新增
+        await prisma.voucher.create({
+          data: {
+            giftCode: row.giftCode,
+            shippingCode: row.shippingCode,
+            amount: row.amount,
+            isExchanged: false,
+          },
+        });
+      }
       successCount++;
     }
 
