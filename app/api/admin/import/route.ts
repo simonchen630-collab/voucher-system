@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -17,27 +15,29 @@ export async function POST(request: Request) {
     for (const row of csvData) {
       if (!row.giftCode) continue;
 
+      const giftCodeStr = String(row.giftCode).trim();
+      const shippingCodeStr = row.shippingCode ? String(row.shippingCode).trim() : '';
+      const amountVal = row.amount ? Number(row.amount) : 100;
+
       // 檢查該禮券序號是否已存在
       const existing = await prisma.voucher.findFirst({
-        where: { giftCode: row.giftCode },
+        where: { giftCode: giftCodeStr },
       });
 
       if (existing) {
-        // 若存在則更新對應的運費券與金額
         await prisma.voucher.update({
           where: { id: existing.id },
           data: {
-            shippingCode: row.shippingCode,
-            amount: row.amount,
+            shippingCode: shippingCodeStr,
+            amount: amountVal,
           },
         });
       } else {
-        // 若不存在則直接新增
         await prisma.voucher.create({
           data: {
-            giftCode: row.giftCode,
-            shippingCode: row.shippingCode,
-            amount: row.amount,
+            giftCode: giftCodeStr,
+            shippingCode: shippingCodeStr,
+            amount: amountVal,
             isExchanged: false,
           },
         });
@@ -49,8 +49,11 @@ export async function POST(request: Request) {
       success: true,
       message: `匯入完成！成功寫入/更新 ${successCount} 筆禮券資料。`,
     });
-  } catch (error) {
-    console.error('CSV 匯入錯誤:', error);
-    return NextResponse.json({ success: false, message: '系統發生異常，匯入失敗' }, { status: 500 });
+  } catch (error: any) {
+    console.error('CSV 匯入詳細錯誤:', error);
+    return NextResponse.json({ 
+      success: false, 
+      message: `系統發生異常，匯入失敗: ${error.message || '未知錯誤'}` 
+    }, { status: 500 });
   }
 }
