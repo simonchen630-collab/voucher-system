@@ -1,30 +1,36 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// 建立 Prisma 單例連線，避免建置或執行時重複初始化
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: ['error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { ids } = body; // 接收前端傳過來的 ID 陣列
+    const { id } = body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ success: false, message: '沒有指定要刪除的項目' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ success: false, message: '缺少刪除 ID' }, { status: 400 });
     }
 
-    // 批次從資料庫刪除
-    const result = await prisma.voucher.deleteMany({
-      where: {
-        id: { in: ids },
-      },
+    await prisma.voucher.delete({
+      where: { id: Number(id) },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: `成功刪除 ${result.count} 筆禮券資料！`,
-    });
-  } catch (error) {
-    console.error('刪除 API 發生錯誤:', error);
-    return NextResponse.json({ success: false, message: '系統發生異常，刪除失敗' }, { status: 500 });
+    return NextResponse.json({ success: true, message: '刪除成功' });
+  } catch (error: any) {
+    console.error('刪除詳細錯誤:', error);
+    return NextResponse.json({ 
+      success: false, 
+      message: `刪除失敗: ${error.message || '未知錯誤'}` 
+    }, { status: 500 });
   }
 }
